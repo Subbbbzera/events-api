@@ -1,3 +1,4 @@
+import { cacheService } from '../../cache/CacheService';
 import {
   PaginatedResponseDto,
   PaginationQuery,
@@ -21,32 +22,54 @@ export class EventService {
   public async getEvents(
     pagination: PaginationQuery,
   ): Promise<PaginatedResponseDto<EventResponseDto>> {
+    const cacheKey = cacheService.getEventsListKey(pagination);
+    const cached =
+      await cacheService.get<PaginatedResponseDto<EventResponseDto>>(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
     const { items, total } =
       await this.eventRepository.findAllPaginated(pagination);
 
-    return {
+    const response: PaginatedResponseDto<EventResponseDto> = {
       items: items.map(toEventResponseDto),
       total,
       limit: pagination.limit,
       offset: pagination.offset,
     };
+
+    await cacheService.set(cacheKey, response);
+    return response;
   }
 
   public async getUserEvents(
     userId: string,
     pagination: PaginationQuery,
   ): Promise<PaginatedResponseDto<EventResponseDto>> {
+    const cacheKey = cacheService.getUserEventsKey(userId, pagination);
+    const cached =
+      await cacheService.get<PaginatedResponseDto<EventResponseDto>>(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
     const { items, total } = await this.eventRepository.findUserEventsPaginated(
       userId,
       pagination,
     );
 
-    return {
+    const response: PaginatedResponseDto<EventResponseDto> = {
       items: items.map(toEventResponseDto),
       total,
       limit: pagination.limit,
       offset: pagination.offset,
     };
+
+    await cacheService.set(cacheKey, response);
+    return response;
   }
 
   public async getEventById(id: string): Promise<EventResponseDto> {
@@ -59,6 +82,7 @@ export class EventService {
 
   public async createEvent(input: CreateEventInput): Promise<EventResponseDto> {
     const event = await this.eventRepository.createAndSave(input);
+    await cacheService.invalidateEventsList();
     return toEventResponseDto(event);
   }
 
@@ -82,6 +106,7 @@ export class EventService {
     }
 
     const updated = await this.eventRepository.updateAndSave(event, input);
+    await cacheService.invalidateAllEventsCache();
     return toEventResponseDto(updated);
   }
 
@@ -90,5 +115,6 @@ export class EventService {
     if (!deleted) {
       throw new NotFoundError('Event not found');
     }
+    await cacheService.invalidateAllEventsCache();
   }
 }

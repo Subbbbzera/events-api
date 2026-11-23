@@ -1,3 +1,4 @@
+import { cacheService } from '../../cache/CacheService';
 import {
   ParticipantResponseDto,
   toParticipantResponseDto,
@@ -19,6 +20,12 @@ export class ParticipantService {
       eventId,
       userId,
     );
+
+    await Promise.all([
+      cacheService.invalidateUserEvents(userId),
+      cacheService.invalidateEventsList(),
+    ]);
+
     return toParticipantResponseDto(participant);
   }
 }
