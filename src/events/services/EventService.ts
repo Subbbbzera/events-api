@@ -3,7 +3,7 @@ import {
   PaginatedResponseDto,
   PaginationQuery,
 } from '../../common/dto/pagination.dto';
-import { ConflictError, NotFoundError } from '../../common/errors/AppError';
+import { NotFoundError } from '../../common/errors/AppError';
 import {
   CreateEventInput,
   EventResponseDto,
@@ -90,22 +90,7 @@ export class EventService {
     id: string,
     input: UpdateEventInput,
   ): Promise<EventResponseDto> {
-    const event = await this.eventRepository.findById(id);
-    if (!event) {
-      throw new NotFoundError('Event not found');
-    }
-
-    if (input.maxParticipants !== undefined) {
-      const currentParticipants =
-        await this.eventRepository.countParticipants(id);
-      if (input.maxParticipants < currentParticipants) {
-        throw new ConflictError(
-          `Cannot set maxParticipants (${input.maxParticipants}) below current registered participants (${currentParticipants})`,
-        );
-      }
-    }
-
-    const updated = await this.eventRepository.updateAndSave(event, input);
+    const updated = await this.eventRepository.updateWithLock(id, input);
     await cacheService.invalidateAllEventsCache();
     return toEventResponseDto(updated);
   }

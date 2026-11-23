@@ -7,7 +7,8 @@ import { createAuthRouter } from './users/routes/auth.routes';
 export const createApp = (): Express => {
   const app = express();
 
-  app.use(express.json());
+  app.disable('x-powered-by');
+  app.use(express.json({ limit: '10kb' }));
 
   app.get('/health', (_req, res) => {
     res.status(HttpStatus.OK).json({ status: 'ok' });

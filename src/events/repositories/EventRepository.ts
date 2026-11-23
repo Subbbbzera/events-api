@@ -1,6 +1,8 @@
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { PaginationQuery } from '../../common/dto/pagination.dto';
+import { ConflictError, NotFoundError } from '../../common/errors/AppError';
 import { AppDataSource } from '../../db/data-source';
+import { Participant } from '../../participants/entities/Participant.entity';
 import { CreateEventInput, UpdateEventInput } from '../dto/event.dto';
 import { Event } from '../entities/Event.entity';
 
@@ -55,34 +57,46 @@ export class EventRepository {
     return this.repo.save(event);
   }
 
-  public async updateAndSave(
-    event: Event,
+  public async updateWithLock(
+    id: string,
     input: UpdateEventInput,
   ): Promise<Event> {
-    if (input.name !== undefined) event.name = input.name;
-    if (input.description !== undefined) event.description = input.description;
-    if (input.date !== undefined) event.date = input.date;
-    if (input.location !== undefined) event.location = input.location;
-    if (input.maxParticipants !== undefined) {
-      event.maxParticipants = input.maxParticipants;
-    }
+    return AppDataSource.transaction(async (manager: EntityManager) => {
+      const eventRepo = manager.getRepository(Event);
+      const event = await eventRepo
+        .createQueryBuilder('event')
+        .setLock('pessimistic_write')
+        .where('event.id = :id', { id })
+        .getOne();
 
-    return this.repo.save(event);
+      if (!event) {
+        throw new NotFoundError('Event not found');
+      }
+
+      if (input.maxParticipants !== undefined) {
+        const currentParticipants = await manager
+          .getRepository(Participant)
+          .count({ where: { eventId: id } });
+
+        if (input.maxParticipants < currentParticipants) {
+          throw new ConflictError(
+            `Cannot set maxParticipants (${input.maxParticipants}) below current registered participants (${currentParticipants})`,
+          );
+        }
+        event.maxParticipants = input.maxParticipants;
+      }
+
+      if (input.name !== undefined) event.name = input.name;
+      if (input.description !== undefined) event.description = input.description;
+      if (input.date !== undefined) event.date = input.date;
+      if (input.location !== undefined) event.location = input.location;
+
+      return eventRepo.save(event);
+    });
   }
 
   public async deleteById(id: string): Promise<boolean> {
     const result = await this.repo.delete(id);
     return (result.affected ?? 0) > 0;
-  }
-
-  public async countParticipants(eventId: string): Promise<number> {
-    const result = await this.repo.manager
-      .createQueryBuilder()
-      .select('COUNT(*)', 'count')
-      .from('participants', 'p')
-      .where('p.event_id = :eventId', { eventId })
-      .getRawOne<{ count: string }>();
-
-    return Number(result?.count ?? 0);
   }
 }
