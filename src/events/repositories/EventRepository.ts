@@ -23,6 +23,23 @@ export class EventRepository {
     return { items, total };
   }
 
+  public async findUserEventsPaginated(
+    userId: string,
+    pagination: PaginationQuery,
+  ): Promise<{ items: Event[]; total: number }> {
+    const [items, total] = await this.repo
+      .createQueryBuilder('event')
+      .innerJoin('event.participants', 'participant')
+      .where('participant.userId = :userId', { userId })
+      .orderBy('event.date', 'ASC')
+      .addOrderBy('event.createdAt', 'DESC')
+      .take(pagination.limit)
+      .skip(pagination.offset)
+      .getManyAndCount();
+
+    return { items, total };
+  }
+
   public async findById(id: string): Promise<Event | null> {
     return this.repo.findOne({ where: { id } });
   }

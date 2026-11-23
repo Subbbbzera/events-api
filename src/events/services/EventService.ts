@@ -32,6 +32,23 @@ export class EventService {
     };
   }
 
+  public async getUserEvents(
+    userId: string,
+    pagination: PaginationQuery,
+  ): Promise<PaginatedResponseDto<EventResponseDto>> {
+    const { items, total } = await this.eventRepository.findUserEventsPaginated(
+      userId,
+      pagination,
+    );
+
+    return {
+      items: items.map(toEventResponseDto),
+      total,
+      limit: pagination.limit,
+      offset: pagination.offset,
+    };
+  }
+
   public async getEventById(id: string): Promise<EventResponseDto> {
     const event = await this.eventRepository.findById(id);
     if (!event) {

@@ -23,6 +23,13 @@ export const createEventRouter = (): Router => {
   );
 
   router.get(
+    '/my',
+    authenticate,
+    validateRequest(paginationQuerySchema, 'query'),
+    asyncHandler(eventController.listMyEvents),
+  );
+
+  router.get(
     '/:id',
     validateRequest(eventIdParamSchema, 'params'),
     asyncHandler(eventController.getById),

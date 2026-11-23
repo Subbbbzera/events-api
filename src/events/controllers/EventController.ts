@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { PaginationQuery } from '../../common/dto/pagination.dto';
-import { HttpStatus } from '../../common/errors/AppError';
+import { HttpStatus, UnauthorizedError } from '../../common/errors/AppError';
 import {
   CreateEventInput,
   EventIdParam,
@@ -18,6 +18,18 @@ export class EventController {
   public list = async (req: Request, res: Response): Promise<void> => {
     const pagination = req.query as unknown as PaginationQuery;
     const result = await this.eventService.getEvents(pagination);
+    res.status(HttpStatus.OK).json(result);
+  };
+
+  public listMyEvents = async (req: Request, res: Response): Promise<void> => {
+    if (!req.user) {
+      throw new UnauthorizedError('Authentication required');
+    }
+    const pagination = req.query as unknown as PaginationQuery;
+    const result = await this.eventService.getUserEvents(
+      req.user.id,
+      pagination,
+    );
     res.status(HttpStatus.OK).json(result);
   };
 
