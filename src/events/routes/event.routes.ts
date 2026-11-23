@@ -3,6 +3,7 @@ import { paginationQuerySchema } from '../../common/dto/pagination.dto';
 import { authenticate } from '../../common/middlewares/authMiddleware';
 import { validateRequest } from '../../common/middlewares/validateRequest';
 import { asyncHandler } from '../../common/utils/asyncHandler';
+import { ParticipantController } from '../../participants/controllers/ParticipantController';
 import { EventController } from '../controllers/EventController';
 import {
   createEventSchema,
@@ -13,6 +14,7 @@ import {
 export const createEventRouter = (): Router => {
   const router = Router();
   const eventController = new EventController();
+  const participantController = new ParticipantController();
 
   router.get(
     '/',
@@ -48,5 +50,13 @@ export const createEventRouter = (): Router => {
     asyncHandler(eventController.remove),
   );
 
+  router.post(
+    '/:id/register',
+    authenticate,
+    validateRequest(eventIdParamSchema, 'params'),
+    asyncHandler(participantController.register),
+  );
+
   return router;
 };
+
