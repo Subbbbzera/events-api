@@ -1,6 +1,7 @@
 import express, { Express } from 'express';
 import { HttpStatus, NotFoundError } from './common/errors/AppError';
 import { errorHandler } from './common/middlewares/errorHandler';
+import { createAuthRouter } from './users/routes/auth.routes';
 
 export const createApp = (): Express => {
   const app = express();
@@ -11,6 +12,8 @@ export const createApp = (): Express => {
     res.status(HttpStatus.OK).json({ status: 'ok' });
   });
 
+  app.use('/api/auth', createAuthRouter());
+
   app.use((_req, _res, next) => {
     next(new NotFoundError('Route not found'));
   });
@@ -19,3 +22,4 @@ export const createApp = (): Express => {
 
   return app;
 };
+
