@@ -1,11 +1,11 @@
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createApp } from '../src/app';
-import { cacheService } from '../src/cache/CacheService';
-import { HttpStatus } from '../src/common/errors/AppError';
-import { AppDataSource } from '../src/db/data-source';
-import { EventResponseDto } from '../src/events/dto/event.dto';
-import { AuthResponseDto } from '../src/users/dto/auth.dto';
+import { createApp } from '../../src/app';
+import { cacheService } from '../../src/cache/CacheService';
+import { HttpStatus } from '../../src/common/errors/AppError';
+import { AppDataSource } from '../../src/db/data-source';
+import { EventResponseDto } from '../../src/events/dto/event.dto';
+import { AuthResponseDto } from '../../src/users/dto/auth.dto';
 
 const app = createApp();
 

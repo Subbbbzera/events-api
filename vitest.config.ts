@@ -12,7 +12,7 @@ export default defineConfig({
       NODE_ENV: 'test',
       PORT: '3001',
       DB_HOST: process.env.DB_HOST ?? 'localhost',
-      DB_PORT: process.env.DB_PORT ?? '5432',
+      DB_PORT: process.env.DB_PORT ?? '5433',
       DB_USER: process.env.DB_USER ?? 'postgres',
       DB_PASSWORD: process.env.DB_PASSWORD ?? 'postgres_dev_password',
       DB_NAME: process.env.DB_NAME ?? 'events_test_db',
